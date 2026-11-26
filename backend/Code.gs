@@ -51,7 +51,7 @@ const TOKEN_DAYS = 30;
 
 const SCHEMA = {
   Users: ['User_Id', 'Nombre', 'Email', 'Password', 'Rol', 'Estrellas', 'Especialidad', 'Descripcion', 'Foto_URL', 'Color',
-    'Horario_JSON', 'Almuerzo_JSON', 'Activo', 'Orden', 'Ultimo_Login', 'Creado'],
+    'Horario_JSON', 'Almuerzo_JSON', 'Activo', 'Orden', 'Ultimo_Login', 'Creado', 'WhatsApp'],
   Services: ['Id', 'Nombre', 'Duracion_Min', 'Precio', 'Resumen', 'Incluye', 'Categoria', 'Destacado', 'Activo', 'Orden'],
   Citas: ['Id', 'Codigo', 'Fecha', 'Hora_Inicio', 'Hora_Fin', 'Duracion_Min', 'Barbero_Id', 'Barbero_Nombre', 'Servicio_Id',
     'Servicio_Nombre', 'Precio', 'Propina', 'Cliente_Nombre', 'Cliente_Telefono', 'Cliente_Email', 'Estado', 'Origen',
@@ -66,7 +66,7 @@ const SCHEMA = {
 
 /* columnas que SIEMPRE deben ser texto (evita que Sheets convierta fechas, horas o celulares) */
 const TEXT_COLS = {
-  Users: ['User_Id', 'Password', 'Horario_JSON', 'Almuerzo_JSON'],
+  Users: ['User_Id', 'Password', 'Horario_JSON', 'Almuerzo_JSON', 'WhatsApp'],
   Services: ['Id'],
   Citas: ['Id', 'Codigo', 'Fecha', 'Hora_Inicio', 'Hora_Fin', 'Barbero_Id', 'Servicio_Id', 'Cliente_Telefono'],
   Bloqueos: ['Id', 'Barbero_Id', 'Fecha', 'Hora_Inicio', 'Hora_Fin'],
@@ -340,7 +340,7 @@ function publicUser_(u, full) {
     Foto_URL: u.Foto_URL || '', Color: u.Color || '#4b1d2f',
     Horario: parse_(u.Horario_JSON, config_().Horario_Local),
     Almuerzo: parse_(u.Almuerzo_JSON, DEFAULT_LUNCH),
-    Activo: active_(u), Orden: Number(u.Orden) || 99,
+    Activo: active_(u), Orden: Number(u.Orden) || 99, WhatsApp: phone_(u.WhatsApp),
   };
   if (full) { o.Email = u.Email; o.Ultimo_Login = u.Ultimo_Login; }
   return o;
@@ -758,6 +758,7 @@ function handleWrite_(a, p, s) {
     if (x.Descripcion !== undefined) upd.Descripcion = String(x.Descripcion).slice(0, 280);
     if (x.Foto_URL !== undefined) upd.Foto_URL = String(x.Foto_URL).slice(0, 500);
     if (x.Color !== undefined) upd.Color = String(x.Color).slice(0, 9);
+    if (x.WhatsApp !== undefined) upd.WhatsApp = phone_(x.WhatsApp);
     if (x.Horario) upd.Horario_JSON = JSON.stringify(x.Horario);
     if (x.Almuerzo) upd.Almuerzo_JSON = JSON.stringify({ desde: x.Almuerzo.desde, hasta: x.Almuerzo.hasta, min: Number(x.Almuerzo.min) || 0 });
     update_('Users', target, upd);
@@ -885,6 +886,7 @@ function handleWrite_(a, p, s) {
     };
     if (x.Especialidad !== undefined) base.Especialidad = x.Especialidad;
     if (x.Color) base.Color = x.Color;
+    if (x.WhatsApp !== undefined) base.WhatsApp = phone_(x.WhatsApp);
     if (x.Password) base.Password = String(x.Password);
     if (ex) { update_('Users', ex, base); return ok_({ user: publicUser_(ex, true) }); }
     if (!x.Password) return fail_('Ponle una contraseña inicial.');

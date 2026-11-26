@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Crown, Sparkles, User, Phone, Mail, Check, CalendarPlus, MapPin, Gift, Loader2, Clock3, Scissors, Shuffle } from "lucide-react";
+import { MessageCircle, ChevronLeft, Crown, Sparkles, User, Phone, Mail, Check, CalendarPlus, MapPin, Gift, Loader2, Clock3, Scissors, Shuffle } from "lucide-react";
 import { usePublic } from "./ClientLayout";
 import { apiPost } from "../../lib/api";
 import { track } from "../../lib/sync";
@@ -94,7 +94,7 @@ export function Booking() {
     }
   };
 
-  if (done) return <Ticket done={done} cfg={pub?.config} />;
+  if (done) return <Ticket done={done} cfg={pub?.config} barbers={barbers} />;
 
   return (
     <main className="booking">
@@ -186,8 +186,9 @@ export function Booking() {
   );
 }
 
-function Ticket({ done, cfg }) {
+function Ticket({ done, cfg, barbers = [] }) {
   const { cita: c, card, syncing, moved } = done;
+  const wa = barbers.find((b) => b.User_Id === c.Barbero_Id)?.WhatsApp || cfg?.WhatsApp_1;
   return (
     <main className="booking ticket-page">
       <div className="confetti" aria-hidden="true">{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ "--i": i }} />)}</div>
@@ -222,7 +223,7 @@ function Ticket({ done, cfg }) {
 
       <div className="ticket-actions">
         <a className="btn btn-ghost" href={gcalLink(c, cfg)} target="_blank" rel="noreferrer" aria-disabled={syncing}><CalendarPlus size={17} /> Calendario</a>
-        <a className="btn btn-ghost" href={waLink(cfg?.WhatsApp_1, `Hola ✦ reservé ${nice(c.Servicio_Nombre)} el ${prettyDate(c.Fecha)} a las ${h12(c.Hora_Inicio)} con ${c.Barbero_Nombre}. Código ${c.Codigo}`)} target="_blank" rel="noreferrer">WhatsApp</a>
+        <a className="btn btn-ghost" href={waLink(wa, `Hola ${c.Barbero_Nombre.split(" ")[0]} ✦ reservé ${nice(c.Servicio_Nombre)} el ${prettyDate(c.Fecha)} a las ${h12(c.Hora_Inicio)} con ${c.Barbero_Nombre}. Código ${c.Codigo}`)} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Escribir a {c.Barbero_Nombre.split(" ")[0]}</a>
       </div>
       <Link to="/clientes/mis-citas" className="btn btn-primary block">Ver mis citas</Link>
       <Link to="/clientes" className="btn btn-ghost block" style={{ marginTop: 8 }}>Volver al inicio</Link>

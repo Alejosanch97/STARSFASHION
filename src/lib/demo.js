@@ -31,8 +31,8 @@ const SERVICES = [
 
 const USERS = [
   { User_Id: "U001", Nombre: "Alejo · Control", Email: "super@starsfashion.co", Password: "Stars2026*", Rol: "superadmin", Estrellas: 5, Especialidad: "Soporte", Descripcion: "Cuenta de control y arreglos.", Color: "#231a20" },
-  { User_Id: "U002", Nombre: "Dueño Stars", Email: "dueno@starsfashion.co", Password: "Stars2026*", Rol: "barber,owner", Estrellas: 5, Especialidad: "Fade & diseño", Descripcion: "Fundador de Stars Fashion. Precisión y estilo en cada corte.", Color: "#8a2f4c" },
-  { User_Id: "U003", Nombre: "Santiago", Email: "santiago@starsfashion.co", Password: "Stars2026*", Rol: "barber,admin", Estrellas: 5, Especialidad: "Freestyle", Descripcion: "Diseños de líneas y siluetas. Si lo imaginas, lo cortamos.", Color: "#c08a2e", Almuerzo: { desde: "13:00", hasta: "15:00", min: 60 } },
+  { User_Id: "U002", Nombre: "Dueño Stars", Email: "dueno@starsfashion.co", Password: "Stars2026*", Rol: "barber,owner", WhatsApp: "573022339159", Estrellas: 5, Especialidad: "Fade & diseño", Descripcion: "Fundador de Stars Fashion. Precisión y estilo en cada corte.", Color: "#8a2f4c" },
+  { User_Id: "U003", Nombre: "Santiago", Email: "santiago@starsfashion.co", Password: "Stars2026*", Rol: "barber,admin", WhatsApp: "573022339167", Estrellas: 5, Especialidad: "Freestyle", Descripcion: "Diseños de líneas y siluetas. Si lo imaginas, lo cortamos.", Color: "#c08a2e", Almuerzo: { desde: "13:00", hasta: "15:00", min: 60 } },
   { User_Id: "U004", Nombre: "Kevin", Email: "kevin@starsfashion.co", Password: "Stars2026*", Rol: "barber", Estrellas: 4.8, Especialidad: "Barba & ritual VIP", Descripcion: "Especialista en barba, faciales y experiencia VIP.", Color: "#3f6ea6" },
 ].map((u, i) => ({ Foto_URL: "", Horario: HOURS, Almuerzo: DEFAULT_LUNCH, Activo: true, Orden: i, ...u }));
 
@@ -247,7 +247,7 @@ function run(a, p, D) {
   if (a === "profile_save") {
     const x = p.profile || {};
     const target = x.User_Id && roles(me.Rol).includes("superadmin") ? userById(x.User_Id) : me;
-    ["Nombre", "Estrellas", "Especialidad", "Descripcion", "Foto_URL", "Color", "Horario", "Almuerzo"].forEach((k) => { if (x[k] !== undefined) target[k] = x[k]; });
+    ["Nombre", "Estrellas", "Especialidad", "Descripcion", "Foto_URL", "Color", "Horario", "Almuerzo", "WhatsApp"].forEach((k) => { if (x[k] !== undefined) target[k] = x[k]; });
     return ok({ user: pub(target, true) });
   }
   if (a === "password_change") {
@@ -318,7 +318,7 @@ function run(a, p, D) {
       u = { User_Id: "U" + String(D.users.length + 1).padStart(3, "0") + rnd(36).toString(36).toUpperCase(), Estrellas: 5, Descripcion: "", Foto_URL: "", Color: "#8a2f4c", Horario: HOURS, Almuerzo: DEFAULT_LUNCH, Orden: D.users.length };
       D.users.push(u);
     }
-    Object.assign(u, { Nombre: x.Nombre, Email: x.Email.toLowerCase(), Rol: x.Rol || "barber", Activo: x.Activo !== false, ...(x.Especialidad !== undefined ? { Especialidad: x.Especialidad } : {}), ...(x.Color ? { Color: x.Color } : {}), ...(x.Password ? { Password: x.Password } : {}) });
+    Object.assign(u, { Nombre: x.Nombre, Email: x.Email.toLowerCase(), Rol: x.Rol || "barber", Activo: x.Activo !== false, ...(x.Especialidad !== undefined ? { Especialidad: x.Especialidad } : {}), ...(x.Color ? { Color: x.Color } : {}), ...(x.WhatsApp !== undefined ? { WhatsApp: phoneNorm(x.WhatsApp) } : {}), ...(x.Password ? { Password: x.Password } : {}) });
     return ok({ user: pub(u, true) });
   }
   if (a === "service_save") {

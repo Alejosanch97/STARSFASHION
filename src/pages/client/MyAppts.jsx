@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Phone, Search, CalendarPlus, RefreshCw, XCircle, MessageSquareText, Bell, Gift, CalendarHeart } from "lucide-react";
+import { MessageCircle, ChevronLeft, Phone, Search, CalendarPlus, RefreshCw, XCircle, MessageSquareText, Bell, Gift, CalendarHeart } from "lucide-react";
 import { usePublic } from "./ClientLayout";
 import { apiPost } from "../../lib/api";
 import { track } from "../../lib/sync";
-import { nice, h12, prettyDate, money, phoneNorm, phonePretty, todayStr, nowMin, toMin } from "../../lib/time";
+import { waLink, nice, h12, prettyDate, money, phoneNorm, phonePretty, todayStr, nowMin, toMin } from "../../lib/time";
 import { StatusPill, Skeleton, Empty, toast, Spinner } from "../../components/ui";
 import { gcalLink, saveMine } from "./Booking";
 import { enableNotifications, permission, localNotify, once } from "../../lib/push";
@@ -91,6 +91,7 @@ export function MyAppts() {
                 <StatusPill estado={c.Estado} />
               </div>
               <div className="appt-actions">
+                {(() => { const wa = pub?.barbers?.find((b) => b.User_Id === c.Barbero_Id)?.WhatsApp; return wa ? <a className="btn btn-xs btn-ghost" href={waLink(wa, `Hola ${c.Barbero_Nombre.split(" ")[0]} ✦ sobre mi cita del ${prettyDate(c.Fecha)} a las ${h12(c.Hora_Inicio)}`)} target="_blank" rel="noreferrer"><MessageCircle size={13} /> {c.Barbero_Nombre.split(" ")[0]}</a> : null; })()}
                 <a className="btn btn-xs btn-ghost" href={gcalLink(c, pub?.config)} target="_blank" rel="noreferrer"><CalendarPlus size={13} /> Calendario</a>
                 {c.Estado === "reservada" && <>
                   <button className="btn btn-xs btn-soft" onClick={() => nav("/clientes/reservar", { state: { reschedule: c } })}><RefreshCw size={13} /> Reprogramar</button>

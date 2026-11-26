@@ -14,7 +14,7 @@ export function Control() {
   const { data, mutate, load } = useApp();
   const nav = useNavigate();
   const [tab, setTab] = useState("equipo");
-  const [f, setF] = useState({ Nombre: "", Email: "", Password: pass(), Rol: "barber", Especialidad: "", Color: SERIES[2] });
+  const [f, setF] = useState({ Nombre: "", Email: "", WhatsApp: "", Password: pass(), Rol: "barber", Especialidad: "", Color: SERIES[2] });
   const [edit, setEdit] = useState(null);
   const [cfg, setCfg] = useState(() => ({ ...data.config, Horario_Local: undefined }));
 
@@ -28,7 +28,7 @@ export function Control() {
     }).catch(() => {});
     navigator.clipboard?.writeText(`Stars Fashion · ${location.origin}\nUsuario: ${f.Email}\nClave: ${f.Password}`);
     toast("Credenciales copiadas para enviarlas por WhatsApp", "gold");
-    setF({ Nombre: "", Email: "", Password: pass(), Rol: "barber", Especialidad: "", Color: SERIES[2] });
+    setF({ Nombre: "", Email: "", WhatsApp: "", Password: pass(), Rol: "barber", Especialidad: "", Color: SERIES[2] });
   };
   const saveUser = (u) => {
     mutate("user_save", { user: u }, { apply: (d) => ({ ...d, users: d.users.map((x) => (x.User_Id === u.User_Id ? { ...x, ...u } : x)) }), done: (res, d) => ({ ...d, users: d.users.map((x) => (x.User_Id === u.User_Id ? res.user : x)) }), okMsg: "Usuario actualizado" }).catch(() => {});
@@ -55,6 +55,7 @@ export function Control() {
             <Field label="Nombre"><input value={f.Nombre} onChange={(e) => setF({ ...f, Nombre: e.target.value, Email: f.Email || "" })} placeholder="Ej: Brayan" /></Field>
             <Field label="Correo"><input type="email" value={f.Email} onChange={(e) => setF({ ...f, Email: e.target.value })} placeholder={f.Nombre ? `${f.Nombre.toLowerCase().split(" ")[0]}@starsfashion.co` : "barbero@starsfashion.co"}
               onFocus={() => !f.Email && f.Nombre && setF({ ...f, Email: `${f.Nombre.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "").slice(0, 14)}@starsfashion.co` })} /></Field>
+            <Field label="WhatsApp del barbero" hint="Los clientes le escriben a este número"><input inputMode="tel" value={f.WhatsApp} onChange={(e) => setF({ ...f, WhatsApp: e.target.value })} placeholder="300 123 4567" /></Field>
             <Field label="Contraseña inicial"><div className="row" style={{ gap: 8 }}><input value={f.Password} onChange={(e) => setF({ ...f, Password: e.target.value })} /><button type="button" className="icon-btn" onClick={() => setF({ ...f, Password: pass() })}><Wand2 size={16} /></button></div></Field>
             <Field label="Rol"><select value={f.Rol} onChange={(e) => setF({ ...f, Rol: e.target.value })}>{ROLES.map((r) => <option key={r} value={r}>{r.split(",").map((x) => ROLE[x]).join(" + ")}</option>)}</select></Field>
             <div className="field"><span className="field-label">Color</span><div className="color-row">{SERIES.map((c) => <button key={c} type="button" className={f.Color === c ? "on" : ""} style={{ background: c }} onClick={() => setF({ ...f, Color: c })} />)}</div></div>
@@ -102,6 +103,7 @@ export function Control() {
           <>
             <Field label="Nombre"><input value={edit.Nombre} onChange={(e) => setEdit({ ...edit, Nombre: e.target.value })} /></Field>
             <Field label="Correo"><input value={edit.Email} onChange={(e) => setEdit({ ...edit, Email: e.target.value })} /></Field>
+            <Field label="WhatsApp"><input inputMode="tel" value={edit.WhatsApp || ""} onChange={(e) => setEdit({ ...edit, WhatsApp: e.target.value })} placeholder="300 123 4567" /></Field>
             <Field label="Rol"><select value={edit.Rol} onChange={(e) => setEdit({ ...edit, Rol: e.target.value })}>{[...new Set([edit.Rol, ...ROLES])].map((r) => <option key={r} value={r}>{String(r).split(",").map((x) => ROLE[x.trim()] || x).join(" + ")}</option>)}</select></Field>
             <Field label="Nueva contraseña" hint="Déjalo vacío para no cambiarla"><div className="row" style={{ gap: 8 }}><input value={edit.Password} onChange={(e) => setEdit({ ...edit, Password: e.target.value })} /><button type="button" className="icon-btn" onClick={() => { const p = pass(); setEdit({ ...edit, Password: p }); navigator.clipboard?.writeText(p); toast("Clave copiada"); }}><Copy size={16} /></button></div></Field>
             <label className="check"><input type="checkbox" checked={edit.Activo !== false} onChange={(e) => setEdit({ ...edit, Activo: e.target.checked })} /><span><b><Power size={13} /> Cuenta activa</b><small>Si la apagas, no entra ni aparece en reservas</small></span></label>

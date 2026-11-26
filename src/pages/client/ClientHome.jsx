@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarHeart, MapPin, MessageCircle, Clock, Gift, CalendarCheck, ChevronDown, Crown, Camera, Sparkles, Plus, Share } from "lucide-react";
 import { usePublic } from "./ClientLayout";
 import { Logo, Stars, Avatar, Skeleton } from "../../components/ui";
-import { nice, DAYS, dow, todayStr, nowMin, toMin, h12, money, durLabel, phonePretty, waLink } from "../../lib/time";
+import { nice, DAYS, dow, todayStr, nowMin, toMin, h12, money, durLabel, waLink } from "../../lib/time";
 import { isIOS, isStandalone } from "../../lib/push";
 
 export function ClientHome() {
@@ -33,9 +33,8 @@ export function ClientHome() {
       </Link>
 
       <nav className="cl-links stagger">
-        {cfg.WhatsApp_1 && <a className="cl-link" href={waLink(cfg.WhatsApp_1, "Hola Stars Fashion ✦ quiero información")} target="_blank" rel="noreferrer"><span className="li wa"><MessageCircle size={19} /></span><span className="grow"><b>WhatsApp</b><small>{phonePretty(cfg.WhatsApp_1)}</small></span></a>}
-        {cfg.WhatsApp_2 && <a className="cl-link" href={waLink(cfg.WhatsApp_2, "Hola Stars Fashion ✦ quiero información")} target="_blank" rel="noreferrer"><span className="li wa"><MessageCircle size={19} /></span><span className="grow"><b>WhatsApp 2</b><small>{phonePretty(cfg.WhatsApp_2)}</small></span></a>}
-        <a className="cl-link" href={cfg.Maps_URL} target="_blank" rel="noreferrer"><span className="li"><MapPin size={19} /></span><span className="grow"><b>¿Dónde estamos?</b><small>{cfg.Direccion || "Bogotá"}</small></span></a>
+        <Link className="cl-link" to="/clientes/mis-citas"><span className="li"><CalendarCheck size={19} /></span><span className="grow"><b>Cancelar o reagendar</b><small>Mis citas y mensajes de tu barbero</small></span></Link>
+        <Link className="cl-link gold" to="/clientes/club"><span className="li"><Gift size={19} /></span><span className="grow"><b>Mi tarjeta Stars</b><small>Junta sellos · ¡en el 8 hay sorpresa!</small></span></Link>
         <button className={`cl-link ${hours ? "open" : ""}`} onClick={() => setHours(!hours)}>
           <span className="li"><Clock size={19} /></span><span className="grow"><b>Ver horario</b><small>{H[d]?.on ? `Hoy ${h12(H[d].start)} – ${h12(H[d].end)}` : "Hoy cerrado"}</small></span><ChevronDown size={18} className="chev" />
         </button>
@@ -46,8 +45,7 @@ export function ClientHome() {
             ))}
           </div>
         )}
-        <Link className="cl-link gold" to="/clientes/club"><span className="li"><Gift size={19} /></span><span className="grow"><b>Mi tarjeta Stars</b><small>Junta sellos · ¡en el 8 hay sorpresa!</small></span></Link>
-        <Link className="cl-link" to="/clientes/mis-citas"><span className="li"><CalendarCheck size={19} /></span><span className="grow"><b>Mis citas</b><small>Reprogramar, cancelar y mensajes</small></span></Link>
+        <a className="cl-link" href={cfg.Maps_URL} target="_blank" rel="noreferrer"><span className="li"><MapPin size={19} /></span><span className="grow"><b>¿Dónde estamos?</b><small>{cfg.Direccion || "Bogotá"}</small></span></a>
         {cfg.Instagram && <a className="cl-link" href={`https://instagram.com/${cfg.Instagram}`} target="_blank" rel="noreferrer"><span className="li"><Camera size={19} /></span><span className="grow"><b>Instagram</b><small>@{cfg.Instagram}</small></span></a>}
       </nav>
 
@@ -66,7 +64,10 @@ export function ClientHome() {
                 <Stars value={Number(b.Estrellas) || 5} size={13} />
                 {b.Especialidad && <span className="tag gold">{b.Especialidad}</span>}
                 <p>{b.Descripcion}</p>
-                <Link to={`/clientes/reservar?barbero=${b.User_Id}`} className="btn btn-sm btn-primary">Reservar con {b.Nombre.split(" ")[0]}</Link>
+                <div className="barber-card-actions">
+                  <Link to={`/clientes/reservar?barbero=${b.User_Id}`} className="btn btn-sm btn-primary">Reservar con {b.Nombre.split(" ")[0]}</Link>
+                  {b.WhatsApp && <a className="icon-btn wa" href={waLink(b.WhatsApp, `Hola ${b.Nombre.split(" ")[0]} ✦ te escribo desde Stars Fashion`)} target="_blank" rel="noreferrer" aria-label={`WhatsApp de ${b.Nombre}`}><MessageCircle size={17} /></a>}
+                </div>
               </article>
             ))}
         </div>

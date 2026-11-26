@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Save } from "lucide-react";
+import { ChevronLeft, Save, Phone } from "lucide-react";
+import { phonePretty, phoneNorm } from "../../lib/time";
 import { useApp } from "../../lib/store";
 import { Avatar, Stars, Field } from "../../components/ui";
 import { SERIES } from "../../config";
@@ -12,13 +13,14 @@ export function Profile() {
   const nav = useNavigate();
   const [f, setF] = useState({
     Nombre: me?.Nombre || "", Estrellas: Number(me?.Estrellas) || 5, Especialidad: me?.Especialidad || "",
-    Descripcion: me?.Descripcion || "", Foto_URL: me?.Foto_URL || "", Color: me?.Color || SERIES[0],
+    Descripcion: me?.Descripcion || "", Foto_URL: me?.Foto_URL || "", Color: me?.Color || SERIES[0], WhatsApp: me?.WhatsApp ? phonePretty(me.WhatsApp) : "",
   });
   const set = (k) => (e) => setF({ ...f, [k]: e?.target ? e.target.value : e });
 
   const save = () => {
-    mutate("profile_save", { profile: f }, {
-      apply: (d) => ({ ...d, me: { ...d.me, ...f }, users: d.users.map((u) => (u.User_Id === d.me.User_Id ? { ...u, ...f } : u)) }),
+    const profile = { ...f, WhatsApp: phoneNorm(f.WhatsApp) };
+    mutate("profile_save", { profile }, {
+      apply: (d) => ({ ...d, me: { ...d.me, ...profile }, users: d.users.map((u) => (u.User_Id === d.me.User_Id ? { ...u, ...profile } : u)) }),
       okMsg: "Perfil guardado ✦",
     }).catch(() => {});
     nav("/app/mas");
@@ -40,6 +42,7 @@ export function Profile() {
       <div className="glass card">
         <Field label="Nombre"><input value={f.Nombre} maxLength={60} onChange={set("Nombre")} /></Field>
         <div className="field"><span className="field-label">Estrellas</span><Stars value={f.Estrellas} onChange={(v) => setF({ ...f, Estrellas: v })} /></div>
+        <Field label="Tu WhatsApp" hint="Aquí te escriben los clientes cuando reservan contigo"><div className="input-ico"><Phone size={17} /><input inputMode="tel" value={f.WhatsApp} onChange={set("WhatsApp")} placeholder="300 123 4567" /></div></Field>
         <Field label="Especialidad"><input value={f.Especialidad} maxLength={60} onChange={set("Especialidad")} placeholder="Fade, freestyle, barba…" /></Field>
         <Field label="Descripción" hint={`${f.Descripcion.length}/280`}><textarea value={f.Descripcion} maxLength={280} onChange={set("Descripcion")} /></Field>
         <Field label="Foto (URL)" hint="Pega el link de una foto (Instagram, Drive público, etc.)"><input value={f.Foto_URL} onChange={set("Foto_URL")} placeholder="https://…" /></Field>

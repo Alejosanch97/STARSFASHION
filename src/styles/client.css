@@ -61,7 +61,9 @@
 .barber-card { flex: 0 0 216px; scroll-snap-align: start; padding: 20px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; border-radius: 26px; }
 .barber-card > b { font-size: 1.3rem; margin-top: 4px; }
 .barber-card p { font-size: .8rem; color: var(--ink-2); flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.barber-card .btn { margin-top: 6px; width: 100%; }
+.barber-card-actions { display: flex; gap: 8px; width: 100%; margin-top: 6px; }
+.barber-card-actions .btn { flex: 1; }
+.ticket-actions .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- servicios ---------- */
 .svc-list { display: grid; gap: 10px; }
