@@ -62,6 +62,12 @@ export function Analytics() {
                 <Tooltip content={<ChartTip money={false} />} cursor={{ fill: "rgba(184,133,58,.08)" }} />
                 <Bar dataKey="citas" name="Citas" fill={SERIES[0]} radius={[4, 4, 0, 0]} maxBarSize={22} />
               </BarChart>
+            ) : period === "semana" ? (
+              <BarChart data={daily} margin={{ top: 6, right: 4, left: -8, bottom: 0 }}>
+                <CartesianGrid {...grid} /><XAxis dataKey="label" {...axis} interval={0} /><YAxis {...axis} tickFormatter={kMoney} width={48} allowDecimals={false} />
+                <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(184,133,58,.08)" }} />
+                <Bar dataKey="ingresos" name="Ingresos" fill={SERIES[0]} radius={[4, 4, 0, 0]} maxBarSize={34} />
+              </BarChart>
             ) : (
               <AreaChart data={daily} margin={{ top: 6, right: 4, left: -8, bottom: 0 }}>
                 <defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={SERIES[0]} stopOpacity={0.32} /><stop offset="1" stopColor={SERIES[0]} stopOpacity={0} /></linearGradient></defs>

@@ -32,16 +32,35 @@ export async function enableNotifications(who = {}) {
   if (!pushSupported()) return { ok: false, reason: isIOS() && !isStandalone() ? "ios" : "unsupported" };
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return { ok: false, reason: "denied" };
-  const reg = await registerSW();
-  if (reg && VAPID_PUBLIC_KEY && "PushManager" in window) {
-    try {
-      const sub = (await reg.pushManager.getSubscription()) ||
-        (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) }));
-      await apiPost("push_subscribe", { subscription: sub.toJSON(), ...who });
-    } catch { /* push real no disponible: quedan los avisos locales */ }
+  const sub = await ensureSubscribed(who, { force: true });
+  localNotify("¡Listo! ✦", sub.ok ? "Te avisaremos de tus próximas citas." : "Avisos activos solo con la app abierta.");
+  return { ok: true, push: sub };
+}
+
+/** si ya dio permiso, (re)suscribe este equipo al push real. Devuelve { ok, reason } para poder diagnosticar */
+export async function ensureSubscribed(who = {}, { force = false } = {}) {
+  if (permission() !== "granted") return { ok: false, reason: "Falta dar permiso de notificaciones." };
+  if (!VAPID_PUBLIC_KEY) return { ok: false, reason: "Falta VITE_VAPID_PUBLIC_KEY en Vercel (y hacer Redeploy)." };
+  if (!("PushManager" in window)) return { ok: false, reason: isIOS() ? "En iPhone abre la app desde el ícono de inicio." : "Este navegador no soporta push." };
+  let sub;
+  try {
+    const reg = await registerSW();
+    await navigator.serviceWorker.ready;
+    sub = (await reg.pushManager.getSubscription()) ||
+      (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) }));
+  } catch (e) {
+    return { ok: false, reason: "El celular no aceptó la suscripción: " + (e?.message || e) };
   }
-  localNotify("¡Listo! ✦", "Te avisaremos de tus próximas citas.");
-  return { ok: true };
+  const key = "sf_sub_" + (who.telefono || "barbero");
+  const sig = sub.endpoint.slice(-40);
+  if (!force && localStorage.getItem(key) === sig) return { ok: true, reason: "Notificaciones conectadas ✓" };
+  try {
+    await apiPost("push_subscribe", { subscription: sub.toJSON(), ...who, ...(who.telefono ? { token: "" } : {}) });
+    localStorage.setItem(key, sig);
+    return { ok: true, reason: "Notificaciones conectadas ✓" };
+  } catch (e) {
+    return { ok: false, reason: "La hoja no guardó la suscripción: " + e.message };
+  }
 }
 
 export async function localNotify(title, body, url = "/", tag) {

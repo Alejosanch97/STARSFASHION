@@ -46,8 +46,9 @@ export function summary(list) {
 export function perDay(list, days) {
   return days.map((d) => {
     const l = list.filter((c) => c.Fecha === d);
-    const future = d > todayStr();
-    return { day: d, label: days.length <= 7 ? day3(d) : String(Number(d.slice(8))), ingresos: future ? null : sum(l, income), cortes: future ? null : l.filter(isDone).length };
+    const ing = sum(l, income);
+    const hide = d > todayStr() && ing === 0;   // futuro sin ventas: no se dibuja
+    return { day: d, label: days.length <= 7 ? day3(d) : String(Number(d.slice(8))), ingresos: hide ? null : ing, cortes: hide ? null : l.filter(isDone).length };
   });
 }
 

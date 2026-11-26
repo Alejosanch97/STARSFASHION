@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getSession, DEMO } from "../../lib/api";
 import { AppDataProvider, useApp } from "../../lib/store";
 import { SyncBadge, Avatar, Logo } from "../../components/ui";
-import { permission, enableNotifications } from "../../lib/push";
+import { permission, enableNotifications, ensureSubscribed } from "../../lib/push";
 import { toast } from "../../components/ui";
 
 export function AppShell() {
@@ -22,11 +22,13 @@ function Shell() {
   const loc = useLocation();
   const [perm, setPerm] = useState(permission());
   useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
+  useEffect(() => { ensureSubscribed(); }, []);
 
   const askPush = async () => {
     const r = await enableNotifications();
     setPerm(permission());
     if (!r.ok) toast(r.reason === "ios" ? "En iPhone: Compartir → Agregar a inicio, y abre la app desde ahí." : "Activa las notificaciones en los ajustes del navegador.", "info", 5000);
+    else toast(r.push?.reason || "Avisos activos", r.push?.ok ? "ok" : "error", 6000);
   };
 
   return (

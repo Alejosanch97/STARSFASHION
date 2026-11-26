@@ -35,7 +35,7 @@ React + Vite + Recharts en el front, **Google Apps Script + Google Sheets** como
 - **Almuerzo flexible**: el barbero define ventana (ej. 12–3 pm) y duración (60 min). Los clientes pueden reservar dentro, pero siempre queda libre un hueco para almorzar.
 - **Optimistic first**: todo se pinta al instante desde el cache del celular; el badge del encabezado muestra *Guardando… / Sincronizado / Sin señal · en cola*. Sin internet, los cambios quedan en una bandeja y se suben solos.
 - **Sello automático**: cuando el barbero toca **Llegó · iniciar**, al terminar la hora del servicio un reloj (`tick`, cada 5 min) cierra la cita y pone el sello. Si cierra antes con *Finalizar y cobrar* (llave/efectivo + propina), el sello se pone en ese momento. En el sello 8 sale **SORPRESA**.
-- **Notificaciones**: avisos locales (nueva cita, próximo cliente 15 min antes, mensajes del barbero) vía Service Worker. Para push real con la app cerrada, despliega `push-relay/` y llena `Push_Relay_URL` en Config + `VITE_VAPID_PUBLIC_KEY`. En iPhone el cliente debe *Agregar a inicio*.
+- **Notificaciones push**: `api/push.js` es una Vercel Function que firma y envía los push. Variables en Vercel: `VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_SECRET`. En la hoja Config: `Push_Relay_URL = https://TU-APP.vercel.app/api/push` y `Push_Relay_Secret = PUSH_SECRET`. Prueba con `testPush()` en Apps Script. En iPhone hay que abrir la app desde *Agregar a inicio*.
 - **Correos (pendiente)**: `src/lib/email.js` ya llama a EmailJS; solo faltan las llaves en `.env`.
 
 Hecho con ✦ por Nébula Estudio.

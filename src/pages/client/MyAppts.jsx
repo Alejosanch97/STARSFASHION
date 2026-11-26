@@ -7,7 +7,7 @@ import { track } from "../../lib/sync";
 import { waLink, nice, h12, prettyDate, money, phoneNorm, phonePretty, todayStr, nowMin, toMin } from "../../lib/time";
 import { StatusPill, Skeleton, Empty, toast, Spinner } from "../../components/ui";
 import { gcalLink, saveMine } from "./Booking";
-import { enableNotifications, permission, localNotify, once } from "../../lib/push";
+import { enableNotifications, permission, localNotify, once, ensureSubscribed } from "../../lib/push";
 
 export function MyAppts() {
   const { client, setClient, pub, refresh } = usePublic();
@@ -16,6 +16,7 @@ export function MyAppts() {
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [perm, setPerm] = useState(permission());
+  const [pushState, setPushState] = useState(null);
   const first = useRef(true);
 
   const lookup = useCallback(async (silent) => {
@@ -25,6 +26,7 @@ export function MyAppts() {
     try {
       const r = await (silent ? apiPost("client_lookup", { telefono: t }) : track(apiPost("client_lookup", { telefono: t })));
       setClient({ telefono: t });
+      ensureSubscribed({ telefono: t }).then(setPushState);
       (r.mensajes || []).forEach((m) => { if (!first.current && once("msg_" + m.Id)) localNotify(`${m.Barbero_Nombre} · Stars Fashion`, m.Mensaje, "/clientes/mis-citas", m.Id); else once("msg_" + m.Id); });
       first.current = false;
       setRes(r);
@@ -60,8 +62,14 @@ export function MyAppts() {
       </form>
 
       {res && perm !== "granted" && perm !== "unsupported" && (
-        <button className="notif-banner" onClick={async () => { const r = await enableNotifications({ telefono: phoneNorm(tel) }); setPerm(permission()); if (!r.ok && r.reason === "ios") toast("En iPhone: Compartir → Agregar a inicio", "info", 5000); }}>
+        <button className="notif-banner" onClick={async () => { const r = await enableNotifications({ telefono: phoneNorm(tel) }); setPerm(permission()); if (r.push) setPushState(r.push); if (!r.ok && r.reason === "ios") toast("En iPhone: Compartir → Agregar a inicio", "info", 5000); }}>
           <Bell size={18} /><span><b>Avísame de mi cita</b><small>Recordatorio y mensajes de tu barbero</small></span>
+        </button>
+      )}
+
+      {res && perm === "granted" && pushState && (
+        <button className={`push-state ${pushState.ok ? "ok" : "bad"}`} onClick={async () => setPushState(await ensureSubscribed({ telefono: phoneNorm(tel) }, { force: true }))}>
+          <Bell size={15} /><span>{pushState.reason}</span>{!pushState.ok && <b>Reintentar</b>}
         </button>
       )}
 

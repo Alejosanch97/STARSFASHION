@@ -107,8 +107,8 @@ const DEFAULT_CONFIG = [
   ['Sello_Premio', '8', 'En qué sello sale el regalo'],
   ['Premio_Texto', 'SORPRESA', 'Lo que dice la casilla del regalo'],
   ['Llave_Pago', '@starsfashion', 'Llave Bre-B / Nequi para pagos'],
-  ['Push_Relay_URL', '', 'PRIVADO · URL del servidor web-push (opcional)'],
-  ['Push_Relay_Secret', '', 'PRIVADO · clave compartida con el relay'],
+  ['Push_Relay_URL', '', 'PRIVADO · https://TU-APP.vercel.app/api/push'],
+  ['Push_Relay_Secret', '', 'PRIVADO · igual a PUSH_SECRET en Vercel'],
 ];
 const PRIVATE_CONFIG = { Push_Relay_URL: 1, Push_Relay_Secret: 1 };
 
@@ -498,9 +498,15 @@ function notify_(tipo, ref, title, body, url) {
     const subs = rows_('Push_Subs').filter(function (p) { return p.Tipo === tipo && String(p.Ref) === String(ref); })
       .map(function (p) { return { endpoint: p.Endpoint, keys: parse_(p.Keys_JSON, {}) }; });
     if (!subs.length) return;
-    UrlFetchApp.fetch(cfg.Push_Relay_URL, {
+    const r = UrlFetchApp.fetch(cfg.Push_Relay_URL, {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       payload: JSON.stringify({ secret: cfg.Push_Relay_Secret, subscriptions: subs, payload: { title: title, body: body, url: url || '/' } }),
+    });
+    Logger.log('push ' + tipo + ' ' + ref + ' → ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 200));
+    const out = parse_(r.getContentText(), {});
+    (out.gone || []).forEach(function (ep) {                       // borra suscripciones vencidas
+      const row = rows_('Push_Subs').find(function (p) { return p.Endpoint === ep; });
+      if (row) deleteRow_('Push_Subs', row);
     });
   } catch (e) { Logger.log('push: ' + e.message); }
 }
@@ -1022,6 +1028,20 @@ function clearSessions() {
   let n = 0;
   Object.keys(props.getProperties()).forEach(function (k) { if (k.indexOf('SF_') === 0 && k !== 'SF_VER') { props.deleteProperty(k); n++; } });
   Logger.log('Sesiones cerradas: ' + n);
+}
+
+/* ▶ Prueba de push: ejecútala desde el editor (la 1ª vez pide permiso para "conectarse a servicios externos").
+   Manda una notificación a TODOS los equipos suscritos en Push_Subs. Mira el resultado en Ejecuciones / Registro. */
+function testPush() {
+  const subs = rows_('Push_Subs');
+  Logger.log('Relay: ' + (config_().Push_Relay_URL || '(vacío: llena Push_Relay_URL en Config)'));
+  Logger.log('Suscripciones: ' + subs.length);
+  const seen = {};
+  subs.forEach(function (p) {
+    const k = p.Tipo + '|' + p.Ref;
+    if (seen[k]) return; seen[k] = 1;
+    notify_(p.Tipo, p.Ref, 'Prueba Stars Fashion ✦', 'Si ves esto con la app cerrada, el push funciona.', p.Tipo === 'barbero' ? '/app' : '/clientes');
+  });
 }
 
 function testStars() {
