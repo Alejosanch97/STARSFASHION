@@ -38,28 +38,63 @@ export async function enableNotifications(who = {}) {
 }
 
 /** si ya dio permiso, (re)suscribe este equipo al push real. Devuelve { ok, reason } para poder diagnosticar */
+/* la llave pública la entrega el MISMO servidor que firma (como en Dulce Fresa): nunca quedan cruzadas */
+let keyCache = null;
+async function serverKey() {
+  if (keyCache) return keyCache;
+  try {
+    const r = await fetch("/api/push", { cache: "no-store" });
+    const j = await r.json();
+    if (j.publicKey) return (keyCache = j.publicKey);
+  } catch { /* sin función en local: usamos la del build */ }
+  return VAPID_PUBLIC_KEY || "";
+}
+const sameKey = (sub, key) => {
+  try {
+    const a = new Uint8Array(sub.options?.applicationServerKey || []), b = b64ToUint8(key);
+    return a.length === 0 || (a.length === b.length && a.every((x, i) => x === b[i]));
+  } catch { return true; }
+};
+
+/** suscribe este celular al push real. Devuelve { ok, reason, sub } para poder diagnosticar */
 export async function ensureSubscribed(who = {}, { force = false } = {}) {
   if (permission() !== "granted") return { ok: false, reason: "Falta dar permiso de notificaciones." };
-  if (!VAPID_PUBLIC_KEY) return { ok: false, reason: "Falta VITE_VAPID_PUBLIC_KEY en Vercel (y hacer Redeploy)." };
   if (!("PushManager" in window)) return { ok: false, reason: isIOS() ? "En iPhone abre la app desde el ícono de inicio." : "Este navegador no soporta push." };
-  let sub;
+  const key = await serverKey();
+  if (!key) return { ok: false, reason: "El servidor no tiene llave pública (VITE_VAPID_PUBLIC_KEY en Vercel)." };
+  let sub, renewed = false;
   try {
     const reg = await registerSW();
     await navigator.serviceWorker.ready;
-    sub = (await reg.pushManager.getSubscription()) ||
-      (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) }));
+    sub = await reg.pushManager.getSubscription();
+    if (sub && !sameKey(sub, key)) { await sub.unsubscribe(); sub = null; renewed = true; }   // llave vieja → renovar
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(key) });
   } catch (e) {
     return { ok: false, reason: "El celular no aceptó la suscripción: " + (e?.message || e) };
   }
-  const key = "sf_sub_" + (who.telefono || "barbero");
-  const sig = sub.endpoint.slice(-40);
-  if (!force && localStorage.getItem(key) === sig) return { ok: true, reason: "Notificaciones conectadas ✓" };
+  const lk = "sf_sub_" + (who.telefono || "barbero");
+  const sig = sub.endpoint.slice(-40) + key.slice(0, 8);
+  if (!force && !renewed && localStorage.getItem(lk) === sig) return { ok: true, reason: "Notificaciones conectadas ✓", sub };
   try {
     await apiPost("push_subscribe", { subscription: sub.toJSON(), ...who, ...(who.telefono ? { token: "" } : {}) });
-    localStorage.setItem(key, sig);
-    return { ok: true, reason: "Notificaciones conectadas ✓" };
+    localStorage.setItem(lk, sig);
+    return { ok: true, reason: renewed ? "Notificaciones renovadas ✓" : "Notificaciones conectadas ✓", sub };
   } catch (e) {
     return { ok: false, reason: "La hoja no guardó la suscripción: " + e.message };
+  }
+}
+
+/** manda una prueba a ESTE celular directo desde Vercel (sin Apps Script) */
+export async function testSelf(who = {}, onSending) {
+  const r = await ensureSubscribed(who);
+  if (!r.ok) return r;
+  onSending?.();
+  try {
+    const res = await fetch("/api/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ test: true, subscription: r.sub.toJSON(), url: location.pathname }) });
+    const j = await res.json();
+    return j.ok ? { ok: true, reason: "Prueba enviada ✓ Si no llegó, revisa Ajustes → Notificaciones" } : { ok: false, reason: "Vercel no pudo enviar: " + (j.error || res.status) };
+  } catch (e) {
+    return { ok: false, reason: "No se pudo llamar a /api/push: " + e.message };
   }
 }
 

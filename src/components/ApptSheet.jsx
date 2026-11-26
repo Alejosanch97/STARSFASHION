@@ -70,7 +70,13 @@ export function ApptSheet({ cita, onClose, initialMode = "main" }) {
     if (alsoWa && c.Cliente_Telefono) window.open(waLink(c.Cliente_Telefono, text), "_blank");
     setSending(true);
     try {
-      await mutate("message_send", { cita_id: c.Id, tipo: "personalizado", mensaje: text }, { okMsg: "Mensaje enviado al cliente ✦" });
+      const res = await mutate("message_send", { cita_id: c.Id, tipo: "personalizado", mensaje: text });
+      const p = res?.push;
+      if (!res) { /* sin señal: quedó en cola */ }
+      else if (!p) toast("Mensaje enviado ✦", "ok");
+      else if (p.sent > 0) toast("Mensaje enviado · notificación entregada ✓", "ok", 4500);
+      else if (p.error === "sin-suscripcion") toast("Mensaje guardado · el cliente no tiene notificaciones activas. Escríbele por WhatsApp.", "info", 6000);
+      else toast("Mensaje guardado · la notificación falló: " + p.error, "error", 8000);
       setMode("main"); setMsg("");
     } catch { /* toast ya mostrado */ } finally { setSending(false); }
   };

@@ -7,7 +7,7 @@ import { track } from "../../lib/sync";
 import { waLink, nice, h12, prettyDate, money, phoneNorm, phonePretty, todayStr, nowMin, toMin } from "../../lib/time";
 import { StatusPill, Skeleton, Empty, toast, Spinner } from "../../components/ui";
 import { gcalLink, saveMine } from "./Booking";
-import { enableNotifications, permission, localNotify, once, ensureSubscribed } from "../../lib/push";
+import { enableNotifications, permission, localNotify, once, ensureSubscribed, testSelf } from "../../lib/push";
 
 export function MyAppts() {
   const { client, setClient, pub, refresh } = usePublic();
@@ -68,9 +68,12 @@ export function MyAppts() {
       )}
 
       {res && perm === "granted" && pushState && (
-        <button className={`push-state ${pushState.ok ? "ok" : "bad"}`} onClick={async () => setPushState(await ensureSubscribed({ telefono: phoneNorm(tel) }, { force: true }))}>
-          <Bell size={15} /><span>{pushState.reason}</span>{!pushState.ok && <b>Reintentar</b>}
-        </button>
+        <div className={`push-state ${pushState.ok ? "ok" : "bad"}`}>
+          <Bell size={15} /><span>{pushState.reason}</span>
+          {pushState.ok
+            ? <button onClick={async () => setPushState(await testSelf({ telefono: phoneNorm(tel) }, () => { setPushState({ ok: true, reason: "Cierra la app ya: la prueba llega en 5 segundos…" }); toast("Cierra la app: la prueba llega en 5 s", "gold", 4000); }))}>Probar</button>
+            : <button onClick={async () => setPushState(await ensureSubscribed({ telefono: phoneNorm(tel) }, { force: true }))}>Reintentar</button>}
+        </div>
       )}
 
       {busy && !res ? <div style={{ display: "grid", gap: 10 }}><Skeleton h={130} r={22} /><Skeleton h={90} r={22} /></div> : !res ? (

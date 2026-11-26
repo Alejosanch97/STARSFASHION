@@ -494,21 +494,25 @@ function complete_(c) {
 function notify_(tipo, ref, title, body, url) {
   try {
     const cfg = config_();
-    if (!cfg.Push_Relay_URL) return;
-    const subs = rows_('Push_Subs').filter(function (p) { return p.Tipo === tipo && String(p.Ref) === String(ref); })
-      .map(function (p) { return { endpoint: p.Endpoint, keys: parse_(p.Keys_JSON, {}) }; });
-    if (!subs.length) return;
-    const r = UrlFetchApp.fetch(cfg.Push_Relay_URL, {
+    const relay = String(cfg.Push_Relay_URL || '').trim();
+    if (!relay) { Logger.log('push: falta Push_Relay_URL en Config'); return { sent: 0, error: 'Falta Push_Relay_URL en la hoja Config' }; }
+    const subs = rows_('Push_Subs').filter(function (p) { return String(p.Tipo).trim() === tipo && String(p.Ref).trim() === String(ref); })
+      .map(function (p) { return { endpoint: String(p.Endpoint).trim(), keys: parse_(p.Keys_JSON, {}) }; });
+    if (!subs.length) { Logger.log('push: ' + tipo + ' ' + ref + ' no tiene suscripción'); return { sent: 0, error: 'sin-suscripcion' }; }
+    const r = UrlFetchApp.fetch(relay, {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-      payload: JSON.stringify({ secret: cfg.Push_Relay_Secret, subscriptions: subs, payload: { title: title, body: body, url: url || '/' } }),
+      payload: JSON.stringify({ secret: String(cfg.Push_Relay_Secret || '').trim(), subscriptions: subs, payload: { title: title, body: body, url: url || '/' } }),
     });
-    Logger.log('push ' + tipo + ' ' + ref + ' → ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 200));
-    const out = parse_(r.getContentText(), {});
+    const txt = r.getContentText();
+    Logger.log('push ' + tipo + ' ' + ref + ' → ' + r.getResponseCode() + ' ' + txt.slice(0, 300));
+    const out = parse_(txt, {});
     (out.gone || []).forEach(function (ep) {                       // borra suscripciones vencidas
-      const row = rows_('Push_Subs').find(function (p) { return p.Endpoint === ep; });
+      const row = rows_('Push_Subs').find(function (p) { return String(p.Endpoint).trim() === ep; });
       if (row) deleteRow_('Push_Subs', row);
     });
-  } catch (e) { Logger.log('push: ' + e.message); }
+    if (r.getResponseCode() !== 200) return { sent: 0, error: out.error || ('HTTP ' + r.getResponseCode()) };
+    return { sent: Number(out.sent) || 0, error: (out.errors && out.errors[0]) || '' };
+  } catch (e) { Logger.log('push: ' + e.message); return { sent: 0, error: e.message }; }
 }
 
 /* =====================================================================
@@ -864,8 +868,8 @@ function handleWrite_(a, p, s) {
     if (!msg) return fail_('Escribe el mensaje.');
     const m = { Id: newId_('M'), Cita_Id: c.Id, Cliente_Telefono: phone_(c.Cliente_Telefono), Barbero_Id: c.Barbero_Id, Barbero_Nombre: me.Nombre, Tipo: String(p.tipo || 'personalizado'), Mensaje: msg, Leido: false, Creado: new Date() };
     append_('Mensajes', m);
-    notify_('cliente', m.Cliente_Telefono, me.Nombre + ' · Stars Fashion', msg, '/clientes/mis-citas');
-    return ok_({ mensaje: m });
+    const push = notify_('cliente', m.Cliente_Telefono, me.Nombre + ' · Stars Fashion', msg, '/clientes/mis-citas');
+    return ok_({ mensaje: m, push: push });
   }
 
   if (a === 'stamp_add' || a === 'loyalty_redeem') {

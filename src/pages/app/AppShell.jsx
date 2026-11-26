@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getSession, DEMO } from "../../lib/api";
 import { AppDataProvider, useApp } from "../../lib/store";
 import { SyncBadge, Avatar, Logo } from "../../components/ui";
-import { permission, enableNotifications, ensureSubscribed } from "../../lib/push";
+import { permission, enableNotifications, ensureSubscribed, testSelf } from "../../lib/push";
 import { toast } from "../../components/ui";
 
 export function AppShell() {
@@ -25,6 +25,11 @@ function Shell() {
   useEffect(() => { ensureSubscribed(); }, []);
 
   const askPush = async () => {
+    if (permission() === "granted") {
+      const t = await testSelf({}, () => toast("Cierra la app: la prueba llega en 5 segundos", "gold", 4500));
+      toast(t.reason, t.ok ? "ok" : "error", 7000);
+      return;
+    }
     const r = await enableNotifications();
     setPerm(permission());
     if (!r.ok) toast(r.reason === "ios" ? "En iPhone: Compartir → Agregar a inicio, y abre la app desde ahí." : "Activa las notificaciones en los ajustes del navegador.", "info", 5000);
