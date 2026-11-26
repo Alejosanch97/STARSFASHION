@@ -397,3 +397,11 @@
 .known small { display: block; font-size: .74rem; color: #4d7d66; }
 .input-spin { position: absolute; right: 14px; top: 50%; margin-top: -8px; color: var(--muted); }
 @keyframes ctaIn { from { opacity: 0; transform: translate(-50%, 14px); } }
+
+/* inicio: en silla + próximo a la vez */
+.hero-card + .hero-card { margin-top: 12px; }
+.hero-card.compact { padding: 16px 18px; background: linear-gradient(150deg, #4a2a3a 0%, #2a1520 100%); }
+.hero-card.compact h2 { font-size: 1.55rem; }
+.hero-actions { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-top: 8px; }
+.hero-actions .btn { margin: 0; }
+.btn-glass { background: rgba(255, 255, 255, .12); color: #fbf3e6; border: 1px solid rgba(255, 255, 255, .22); }

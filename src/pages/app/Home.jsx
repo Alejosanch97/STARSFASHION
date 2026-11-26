@@ -25,7 +25,9 @@ export function Home() {
   const t = todayStr();
   const isBarber = perms.barber;
   const mine = useMemo(() => (data?.citas || []).filter((c) => !isBarber || c.Barbero_Id === me?.User_Id), [data, me, isBarber]);
-  const { live, next } = nextUp(mine, t);
+  const { next } = nextUp(mine, t);
+  const lives = mine.filter((c) => c.Estado === "en_curso").sort(byTime);   // en silla, de cualquier día
+  const open = (c, mode = "main") => setSel({ c, mode });
   const today = mine.filter((c) => c.Fecha === t).sort(byTime);
   const sToday = summary(today);
   const week = range("semana");
@@ -55,17 +57,19 @@ export function Home() {
         </button>
       )}
 
-      {/* ---------- en silla / próximo ---------- */}
-      {live ? (
-        <article className="hero-card live" onClick={() => setSel(live)}>
-          <div className="hero-top"><span className="hero-chip"><i className="live-dot" /> En silla ahora</span><span className="num">hasta {h12(live.Hora_Fin)}</span></div>
-          <h2 className="display">{live.Cliente_Nombre}</h2>
-          <p>{nice(live.Servicio_Nombre)}</p>
-          <Progress c={live} />
-          <button className="btn btn-gold block" onClick={(e) => { e.stopPropagation(); setSel(live); }}><CheckCircle2 size={18} /> Finalizar y cobrar</button>
+      {/* ---------- en silla (puede haber varios) + próximo cliente ---------- */}
+      {lives.map((lv) => (
+        <article key={lv.Id} className="hero-card live" onClick={() => open(lv, "pay")}>
+          <div className="hero-top"><span className="hero-chip"><i className="live-dot" /> En silla ahora</span><span className="num">{lv.Fecha === t ? `hasta ${h12(lv.Hora_Fin)}` : prettyDate(lv.Fecha, { short: true })}</span></div>
+          <h2 className="display">{lv.Cliente_Nombre}</h2>
+          <p>{nice(lv.Servicio_Nombre)} · {money(lv.Precio)}</p>
+          {lv.Fecha === t && <Progress c={lv} />}
+          <button className="btn btn-gold block" onClick={(e) => { e.stopPropagation(); open(lv, "pay"); }}><CheckCircle2 size={18} /> Terminar servicio y cobrar</button>
         </article>
-      ) : next ? (
-        <article className="hero-card" onClick={() => setSel(next)}>
+      ))}
+
+      {next && (
+        <article className={`hero-card ${lives.length ? "compact" : ""}`} onClick={() => open(next)}>
           <div className="hero-top"><span className="hero-chip"><Sparkles size={13} /> Próximo cliente</span><Countdown c={next} /></div>
           <h2 className="display">{next.Cliente_Nombre}</h2>
           <p>{nice(next.Servicio_Nombre)} · {durLabel(next.Duracion_Min)}</p>
@@ -73,17 +77,18 @@ export function Home() {
             <span><b className="num">{h12(next.Hora_Inicio)}</b>{next.Fecha !== t ? ` · ${prettyDate(next.Fecha)}` : ""}</span>
             <span className="num">{money(next.Precio)}</span>
           </div>
-          {next.Fecha === t && toMin(next.Hora_Inicio) - n <= 30 ? (
-            <button className="btn btn-gold block" onClick={(e) => { e.stopPropagation(); startNow(next); }}><Play size={18} /> Llegó · iniciar servicio</button>
-          ) : (
-            <p className="hero-hint">Cuando llegue, tócalo y presiona <b>Llegó</b> — así el sello se pone solo.</p>
-          )}
+          <div className="hero-actions">
+            <button className="btn btn-gold" onClick={(e) => { e.stopPropagation(); startNow(next); }}><Play size={18} /> Llegó · iniciar</button>
+            <button className="btn btn-glass" onClick={(e) => { e.stopPropagation(); open(next); }}>Ver cita</button>
+          </div>
         </article>
-      ) : (
+      )}
+
+      {!next && !lives.length && (
         <article className="hero-card empty-hero">
           <Scissors size={26} />
           <h2 className="display">Agenda libre</h2>
-          <p>No tienes más clientes por hoy. ¿Alguien te escribió por WhatsApp?</p>
+          <p>No tienes clientes pendientes. ¿Alguien te escribió por WhatsApp?</p>
           <button className="btn btn-gold block" onClick={() => nav("/app/nueva")}><CalendarPlus size={18} /> Agendar cliente</button>
         </article>
       )}
@@ -113,7 +118,7 @@ export function Home() {
               ...(lunch ? [{ k: "l", s: lunch.s, e: lunch.e }] : []),
               ...blocksToday.map((b) => ({ k: "b", s: toMin(b.Hora_Inicio), e: toMin(b.Hora_Fin), b }))]
               .sort((a, b) => a.s - b.s).map((x) => x.k === "c" ? (
-                <li key={x.c.Id} className={`day-item ${x.c.Estado}`} onClick={() => setSel(x.c)}>
+                <li key={x.c.Id} className={`day-item ${x.c.Estado}`} onClick={() => open(x.c, x.c.Estado === "en_curso" ? "pay" : "main")}>
                   <span className="day-time num">{h12(x.c.Hora_Inicio)}</span>
                   <span className="day-bar" />
                   <div className="grow"><b className="ellipsis">{x.c.Cliente_Nombre}</b><small className="ellipsis">{nice(x.c.Servicio_Nombre)}</small></div>
@@ -144,7 +149,7 @@ export function Home() {
         </div>
       </div>
 
-      {sel && <ApptSheet key={sel.Id} cita={sel} onClose={() => setSel(null)} />}
+      {sel && <ApptSheet key={sel.c.Id + sel.mode} cita={sel.c} initialMode={sel.mode} onClose={() => setSel(null)} />}
     </div>
   );
 }

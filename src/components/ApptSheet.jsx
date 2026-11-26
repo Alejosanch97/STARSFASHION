@@ -19,9 +19,9 @@ const TEMPLATES = [
 ];
 const TIPS = [0, 2000, 5000, 10000];
 
-export function ApptSheet({ cita, onClose }) {
+export function ApptSheet({ cita, onClose, initialMode = "main" }) {
   const { data, mutate, perms, me } = useApp();
-  const [mode, setMode] = useState("main");
+  const [mode, setMode] = useState(cita?.Estado === "en_curso" || initialMode !== "pay" ? initialMode : "main");
   const [pay, setPay] = useState({ metodo: cita?.Metodo_Pago || "llave", propina: Number(cita?.Propina) || 0, precio: Number(cita?.Precio) || 0 });
   const [move, setMove] = useState(null);
   const [moveBarber, setMoveBarber] = useState(cita?.Barbero_Id);
@@ -99,7 +99,7 @@ export function ApptSheet({ cita, onClose }) {
         <p className="muted small-note"><Stamp size={14} /> Si el cliente está en el club, el sello se le pone solo.</p>
       </div>
     );
-    footer = <button className="btn btn-sage" onClick={finish}><CheckCircle2 size={18} /> Cerrar servicio</button>;
+    footer = <button className="btn btn-sage" onClick={finish}><CheckCircle2 size={18} /> Terminar servicio</button>;
   } else if (mode === "move") {
     body = (
       <div className="fade-in">
@@ -215,4 +215,4 @@ export function ApptSheet({ cita, onClose }) {
     </Sheet>
   );
 }
-ApptSheet.propTypes = { cita: PropTypes.object, onClose: PropTypes.func.isRequired };
+ApptSheet.propTypes = { cita: PropTypes.object, onClose: PropTypes.func.isRequired, initialMode: PropTypes.string };
