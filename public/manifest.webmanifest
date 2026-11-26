@@ -1,0 +1,21 @@
+{
+  "name": "Stars Fashion · Barbería VIP",
+  "short_name": "Stars Fashion",
+  "start_url": "/clientes",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4eee6",
+  "theme_color": "#f4eee6",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Reservar cita", "url": "/clientes/reservar" },
+    { "name": "Mi tarjeta", "url": "/clientes/club" },
+    { "name": "Barberos", "url": "/" }
+  ]
+}

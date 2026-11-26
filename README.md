@@ -1,73 +1,41 @@
-# WebApp Template with React JS
+# ✦ Stars Fashion · Barbería VIP
 
+Plataforma mobile-first para **barberos, dueño y clientes** de Stars Fashion.
+React + Vite + Recharts en el front, **Google Apps Script + Google Sheets** como backend (sin CORS).
 
-Used by 4Geeks.com and 4Geeks Academy students, this template helps to bootstrap your first multi-page web applications by integrating with React latest version, vercel deployments and [Vite](https://4geeks.com/lesson/intro-to-vite-module-bundler) for bundling.
+## Rutas
+| Ruta | Quién | Qué |
+|---|---|---|
+| `/` | Equipo | Login (sin landing) |
+| `/app` | Barberos | Próximo cliente, día, semana, avisos |
+| `/app/agenda` | Barberos | Línea de tiempo por día + vista mes. Toca un hueco para agendar ahí |
+| `/app/nueva` | Barberos | Agendar personalmente (clientes de WhatsApp) |
+| `/app/analisis` | Barberos / Dueño | Ingresos, llave vs efectivo, top servicios, horas pico, **top 3 de la semana** |
+| `/app/perfil` · `/app/horario` · `/app/bloqueos` | Barberos | Perfil (estrellas, descripción, foto), horario + **almuerzo flexible**, congelar horas |
+| `/app/club` | Admin / Dueño | Tarjetas de sellos, entregar sorpresa |
+| `/app/equipo` · `/app/servicios` | Dueño | Turnos de hoy y ocupación; precios y servicios |
+| `/app/control` | Super admin | Crear barberos rápido, cuentas, ajustes del negocio |
+| `/clientes` | Clientes | Linktree VIP: reservar, WhatsApp, ubicación, horario, barberos, servicios |
+| `/clientes/reservar` · `/mis-citas` · `/club` | Clientes | Reserva en 4 pasos, reprogramar/cancelar + mensajes, tarjeta de 10 sellos |
 
-### Getting stated:
+## Roles (columna `Rol` en la hoja Users, se combinan con coma)
+- `barber` — atiende y ve su agenda
+- `admin` — barbero admin: además mueve/cancela citas de otros barberos
+- `owner` — dueño: análisis económico de toda la barbería, top 3, equipo, servicios
+- `superadmin` — control total (crear cuentas, ajustes, relay push)
 
-> 📦 Make sure you are using at least node version 20.
+## Puesta en marcha
+1. **Modo demo** (solo para mostrar a otros negocios): `VITE_DEMO=true` en `.env` y sin `VITE_SCRIPT_URL`. En producción déjalo vacío.
+2. **Backend real**: crea una Google Sheet → Extensiones → Apps Script → pega `backend/Code.gs` (y `appsscript.json`) → ejecuta `setupStars()` → (opcional) `seedDemoData()` → Implementar como Aplicación web (Ejecutar como: Yo · Acceso: Cualquier usuario).
+3. Copia la URL `/exec` en `.env` → `VITE_SCRIPT_URL=...` (o en `src/config.js`).
+4. Usuario inicial: `super@starsfashion.co` / `Stars2026*` (cámbialo en Users o desde la app).
 
-1. Install the node package dependencies by typing: `$ npm install`
+## Cómo funciona lo importante
+- **Disponibilidad**: `src/lib/slots.js` y `checkSlot_` en `Code.gs` son la misma lógica. El servidor revalida con `LockService` → nunca hay doble reserva.
+- **Almuerzo flexible**: el barbero define ventana (ej. 12–3 pm) y duración (60 min). Los clientes pueden reservar dentro, pero siempre queda libre un hueco para almorzar.
+- **Optimistic first**: todo se pinta al instante desde el cache del celular; el badge del encabezado muestra *Guardando… / Sincronizado / Sin señal · en cola*. Sin internet, los cambios quedan en una bandeja y se suben solos.
+- **Sello automático**: cuando el barbero toca **Llegó · iniciar**, al terminar la hora del servicio un reloj (`tick`, cada 5 min) cierra la cita y pone el sello. Si cierra antes con *Finalizar y cobrar* (llave/efectivo + propina), el sello se pone en ese momento. En el sello 8 sale **SORPRESA**.
+- **Notificaciones**: avisos locales (nueva cita, próximo cliente 15 min antes, mensajes del barbero) vía Service Worker. Para push real con la app cerrada, despliega `push-relay/` y llena `Push_Relay_URL` en Config + `VITE_VAPID_PUBLIC_KEY`. En iPhone el cliente debe *Agregar a inicio*.
+- **Correos (pendiente)**: `src/lib/email.js` ya llama a EmailJS; solo faltan las llaves en `.env`.
 
-2. Create a .env file by typing `$ cp .env.example .env`
-
-3. Start coding! and the vite dev server with live reload by typing: `$ npm run start`
-
-
-### Styling
-
-You can update the `./index.css` or create new `.css` files and import them into your current css or js files depending on your needs.
-
-### Components
-
-Add more files into your `./src/components` or styles folder as you need them and import them into your current files as needed.
-
-💡Note: There is an example using the Context API inside `pages/demo.js`;
-
-### Pages
-
-Add more files into your `./js/pages` and import them in `./routes.jsx`.
-Each page must match at least one route inside `routes.jsx`
-
-### Centralized Store with useReducer
-
-This template comes with a centralized & general state that's shared with all pages and compoentes, we call it "the store".   
-
-The file `./src/store.js` has a default structure for the store, we encourage you to change it and adapt it to your data needs (for example, if you are doing a `Todo list` you will probably have a array of todos here).
-
-+ Learn [how the useReducer works](https://4geeks.com/lesson/optimize-react-components-usereducer).
-+ Read more about [implementing a global state with Context API](https://4geeks.com/lesson/context-api)
-+ Read more about [react hooks](https://content.breatheco.de/lesson/react-hooks-explained)
-
-The store `Provider` for this context is already set on `./src/main.jsx`. You can access the store from any component using the `useGlobalReducer` hook to get the `store` and `dispatcher`. Check `/views/demo.js` to see a demo. Here is a smaller sample:
-
-```jsx
-import useGlobalReducer from "./src/hooks/useGlobalReducer";
-
-const MyComponentSuper = () => {
-  //here you use the hook to get dispatcher and store
-  import { dispatch, store } = useGlobalReducer();
-
-  return <div>{/* you can use your actions or store inside the html */}</div>
-}
-```
-
-## Publish your website!
-
-1. **Vercel:** The FREE recomended hosting provider is [vercel.com](https://vercel.com/), you can deploy in 1 minutes by typing the following 2 commands:
-
-Login (you need to have an account):
-```sh
-$ npm i vercel -g && vercel login
-```
-Deploy:
-```sh
-$ vercel --prod
-```
-✎ Note: If you don't have an account just go to vercel.com, create a account and come back here.
-
-![Vercel example procedure to deploy](https://github.com/4GeeksAcademy/react-hello-webapp/blob/4b530ba091a981d3916cc6e960e370decaf2e234/docs/deploy.png?raw=true)
-
-## Contributors
-
-This template was built as part of the 4Geeks Academy [Coding Bootcamp](https://4geeksacademy.com/us/coding-bootcamp) by [Alejandro Sanchez](https://twitter.com/alesanchezr) and many other contributors. Find out more about our [Full Stack Developer Course](https://4geeksacademy.com/us/coding-bootcamps/part-time-full-stack-developer), [Data Science Bootcamp](https://4geeksacademy.com/us/coding-bootcamps/datascience-machine-learning) and [CyberSecurity Bootcamp](https://4geeksacademy.com/us/coding-bootcamps/cybersecurity).
+Hecho con ✦ por Nébula Estudio.

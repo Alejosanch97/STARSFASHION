@@ -1,22 +1,25 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import './index.css'  // Global styles for your application
-import { RouterProvider } from "react-router-dom";  // Import RouterProvider to use the router
-import { router } from "./routes";  // Import the router configuration
-import { StoreProvider } from './hooks/useGlobalReducer';  // Import the StoreProvider for global state management
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./routes";
+import { registerSW } from "./lib/push";
+import "./styles/base.css";
+import "./styles/app.css";
+import "./styles/client.css";
 
-const Main = () => {
-    return (
-        <React.StrictMode>  
-            {/* Provide global state to all components */}
-            <StoreProvider> 
-                {/* Set up routing for the application */} 
-                <RouterProvider router={router}>
-                </RouterProvider>
-            </StoreProvider>
-        </React.StrictMode>
-    );
+import { SCRIPT_URL, DEMO_MODE } from "./config";
+
+// si cambia el backend (demo → hoja real), limpiamos lo guardado del anterior
+const BACKEND = SCRIPT_URL || (DEMO_MODE ? "demo" : "none");
+if (localStorage.getItem("sf_backend") !== BACKEND) {
+  Object.keys(localStorage).filter((k) => k.startsWith("sf_") && k !== "sf_client_v1").forEach((k) => localStorage.removeItem(k));
+  localStorage.setItem("sf_backend", BACKEND);
 }
 
-// Render the Main component into the root DOM element.
-ReactDOM.createRoot(document.getElementById('root')).render(<Main />)
+registerSW();
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <RouterProvider router={router} />
+  </React.StrictMode>,
+);

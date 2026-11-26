@@ -1,30 +1,61 @@
-// Import necessary components and functions from react-router-dom.
+/* Rutas
+   /            → login de barberos (sin landing)
+   /app/*       → app de barberos, dueño y super admin
+   /clientes/*  → lo que ven los clientes (link que se comparte) */
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { Toaster } from "./components/ui";
+import { Login } from "./pages/Login";
+const L = (load, name) => () => load().then((m) => ({ Component: m[name] }));
+const page = (name) => L(() => import(`./pages/app/${name}.jsx`), name);
 
-import {
-    createBrowserRouter,
-    createRoutesFromElements,
-    Route,
-} from "react-router-dom";
-import { Layout } from "./pages/Layout";
-import { Home } from "./pages/Home";
-import { Single } from "./pages/Single";
-import { Demo } from "./pages/Demo";
+import { ClientLayout } from "./pages/client/ClientLayout";
+import { ClientHome } from "./pages/client/ClientHome";
+import { Booking } from "./pages/client/Booking";
+import { MyAppts } from "./pages/client/MyAppts";
+import { Loyalty } from "./pages/client/Loyalty";
 
-export const router = createBrowserRouter(
-    createRoutesFromElements(
-    // CreateRoutesFromElements function allows you to build route elements declaratively.
-    // Create your routes here, if you want to keep the Navbar and Footer in all views, add your new routes inside the containing Route.
-    // Root, on the contrary, create a sister Route, if you have doubts, try it!
-    // Note: keep in mind that errorElement will be the default page when you don't get a route, customize that page to make your project more attractive.
-    // Note: The child paths of the Layout element replace the Outlet component with the elements contained in the "element" attribute of these child paths.
+function Root() {
+  return (
+    <>
+      <div className="aura"><i /><i /><i /></div>
+      <Outlet />
+      <Toaster />
+    </>
+  );
+}
 
-      // Root Route: All navigation will start from here.
-      <Route path="/" element={<Layout />} errorElement={<h1>Not found!</h1>} >
-
-        {/* Nested Routes: Defines sub-routes within the BaseHome component. */}
-        <Route path= "/" element={<Home />} />
-        <Route path="/single/:theId" element={ <Single />} />  {/* Dynamic route for single items */}
-        <Route path="/demo" element={<Demo />} />
-      </Route>
-    )
-);
+export const router = createBrowserRouter([
+  {
+    element: <Root />,
+    children: [
+      { path: "/", element: <Login /> },
+      {
+        path: "/app", lazy: L(() => import("./pages/app/AppShell.jsx"), "AppShell"),
+        children: [
+          { index: true, lazy: page("Home") },
+          { path: "agenda", lazy: page("Agenda") },
+          { path: "nueva", lazy: page("NewAppt") },
+          { path: "analisis", lazy: page("Analytics") },
+          { path: "mas", lazy: page("More") },
+          { path: "perfil", lazy: page("Profile") },
+          { path: "horario", lazy: page("MySchedule") },
+          { path: "bloqueos", lazy: page("Blocks") },
+          { path: "club", lazy: page("Club") },
+          { path: "servicios", lazy: page("Services") },
+          { path: "equipo", lazy: page("Team") },
+          { path: "control", lazy: page("Control") },
+        ],
+      },
+      {
+        path: "/clientes", element: <ClientLayout />,
+        children: [
+          { index: true, element: <ClientHome /> },
+          { path: "reservar", element: <Booking /> },
+          { path: "mis-citas", element: <MyAppts /> },
+          { path: "club", element: <Loyalty /> },
+        ],
+      },
+      { path: "*", element: <Navigate to="/" replace /> },
+    ],
+  },
+]);
